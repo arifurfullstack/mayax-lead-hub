@@ -6,69 +6,57 @@ const tiers = [
   {
     name: "BASIC",
     price: 249,
-    icon: Shield,
     delayIcon: Clock,
     delayText: "Access leads\nafter 24 hours",
-    glowColor: "rgba(6, 182, 212, 0.5)",
-    borderColor: "border-cyan/50",
+    glowColor: "0, 200, 220",
+    borderClass: "border-cyan",
     nameColor: "text-cyan",
-    ctaClass: "bg-cyan/20 text-cyan border border-cyan/40 hover:bg-cyan/30",
-    features: [
-      "Normal priority",
-      "Standard support",
-    ],
+    checkColor: "text-cyan",
+    ctaClass: "border-cyan/60 text-cyan hover:bg-cyan/10",
+    features: ["Normal priority", "Standard support"],
     leadCount: "100",
     cta: "CHOOSE BASIC",
   },
   {
     name: "PRO",
     price: 499,
-    icon: Zap,
     delayIcon: Clock,
     delayText: "Access leads\nafter 12 hours",
-    glowColor: "rgba(59, 130, 246, 0.5)",
-    borderColor: "border-primary/50",
+    glowColor: "59, 130, 246",
+    borderClass: "border-primary",
     nameColor: "text-primary",
-    ctaClass: "bg-primary/20 text-primary border border-primary/40 hover:bg-primary/30",
-    features: [
-      "Faster access",
-      "Priority support",
-    ],
+    checkColor: "text-primary",
+    ctaClass: "border-primary/60 text-primary hover:bg-primary/10",
+    features: ["Faster access", "Priority support"],
     leadCount: "250",
     cta: "CHOOSE PRO",
   },
   {
     name: "ELITE",
     price: 999,
-    icon: Star,
     delayIcon: Clock,
     delayText: "Access leads\nafter 6 hours",
-    glowColor: "rgba(139, 92, 246, 0.5)",
-    borderColor: "border-secondary/50",
+    glowColor: "139, 92, 246",
+    borderClass: "border-secondary",
     nameColor: "text-secondary",
-    ctaClass: "bg-secondary/20 text-secondary border border-secondary/40 hover:bg-secondary/30",
-    features: [
-      "Early access",
-      "Priority support",
-    ],
+    checkColor: "text-secondary",
+    ctaClass: "border-secondary/60 text-secondary hover:bg-secondary/10",
+    features: ["Early access", "Priority support"],
     leadCount: "500",
     cta: "CHOOSE ELITE",
   },
   {
     name: "VIP",
     price: 1799,
-    icon: Crown,
     delayIcon: Zap,
     delayText: "Instant access",
-    glowColor: "rgba(200, 168, 78, 0.5)",
-    borderColor: "border-gold/50",
+    glowColor: "200, 168, 78",
+    borderClass: "border-gold",
     nameColor: "text-gold",
-    ctaClass: "bg-gold/20 text-gold border border-gold/40 hover:bg-gold/30",
+    checkColor: "text-gold",
+    ctaClass: "border-gold/60 text-gold hover:bg-gold/10",
     popular: true,
-    features: [
-      "Instant access to leads",
-      "Priority placement",
-    ],
+    features: ["Instant access to leads", "Priority placement"],
     leadCount: "1000",
     cta: "CHOOSE VIP",
   },
@@ -86,8 +74,9 @@ const Subscription = () => {
           width={1920}
           height={1080}
         />
-        <div className="absolute inset-0 bg-background/70 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-background/60" />
       </div>
+
       <div className="relative z-10 max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-10">
@@ -123,30 +112,31 @@ const Subscription = () => {
               <div
                 key={tier.name}
                 className={cn(
-                  "relative flex flex-col items-center rounded-2xl border-2 p-6 pt-8 transition-transform hover:scale-[1.03]",
-                  tier.borderColor
+                  "relative flex flex-col rounded-2xl border-2 p-6 pt-8 transition-all duration-300 hover:scale-[1.03] hover:shadow-lg",
+                  tier.borderClass
                 )}
                 style={{
-                  background: "linear-gradient(180deg, rgba(15, 23, 41, 0.95) 0%, rgba(27, 42, 74, 0.7) 100%)",
-                  boxShadow: `0 0 25px ${tier.glowColor}, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                  background: "rgba(10, 15, 30, 0.75)",
+                  backdropFilter: "blur(12px)",
+                  boxShadow: `0 0 30px rgba(${tier.glowColor}, 0.4), 0 0 60px rgba(${tier.glowColor}, 0.15), inset 0 1px 0 rgba(255,255,255,0.05)`,
                 }}
               >
                 {tier.popular && (
                   <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-10">
-                    <span className="bg-gradient-to-r from-gold via-warning to-gold text-background text-[10px] font-bold px-4 py-1 rounded-full uppercase tracking-wider whitespace-nowrap">
+                    <span className="border border-gold/70 bg-gold/10 text-gold text-[10px] font-bold px-4 py-1 rounded-sm uppercase tracking-[0.2em] whitespace-nowrap">
                       Most Popular
                     </span>
                   </div>
                 )}
 
                 {/* Tier Name */}
-                <h2 className={cn("text-2xl font-extrabold tracking-wider mb-5", tier.nameColor)}>
+                <h2 className={cn("text-2xl font-extrabold tracking-wider mb-5 text-center", tier.nameColor)}>
                   {tier.name}
                 </h2>
 
                 {/* Access Delay */}
                 <div className="flex items-center gap-2.5 mb-5">
-                  <div className={cn("p-1.5 rounded-full", tier.nameColor === "text-gold" ? "bg-gold/15" : "bg-muted")}>
+                  <div className={cn("p-1.5 rounded-full bg-muted/50")}>
                     <DelayIcon className={cn("h-5 w-5", tier.nameColor)} />
                   </div>
                   <span className="text-sm text-muted-foreground whitespace-pre-line leading-tight">
@@ -157,27 +147,27 @@ const Subscription = () => {
                 {/* Price */}
                 <div className="mb-6">
                   <span className="text-4xl font-extrabold text-foreground">${tier.price}</span>
-                  <span className="text-muted-foreground text-sm ml-1">/ mo</span>
+                  <span className="text-muted-foreground text-base ml-1">/ mo</span>
                 </div>
 
                 {/* Features */}
-                <ul className="w-full space-y-3 mb-4 flex-1">
+                <ul className="w-full space-y-3 mb-6 flex-1">
                   {tier.features.map((feature) => (
-                    <li key={feature} className="flex items-center gap-2.5 text-sm text-foreground/85">
-                      <Check className="w-4 h-4 text-success shrink-0" />
+                    <li key={feature} className="flex items-center gap-2.5 text-sm text-foreground/90">
+                      <Check className={cn("w-4 h-4 shrink-0", tier.checkColor)} />
                       <span>{feature}</span>
                     </li>
                   ))}
                   <li className="flex items-center gap-2.5 text-sm text-foreground font-semibold">
-                    <Check className="w-4 h-4 text-success shrink-0" />
-                    <span>{tier.leadCount} <span className="font-normal text-foreground/85">Leads / mo</span></span>
+                    <Check className={cn("w-4 h-4 shrink-0", tier.checkColor)} />
+                    <span>{tier.leadCount} <span className="font-normal text-foreground/80">Leads / mo</span></span>
                   </li>
                 </ul>
 
                 {/* CTA */}
                 <button
                   className={cn(
-                    "w-full py-3 rounded-lg font-bold text-sm tracking-wide transition-colors mt-2",
+                    "w-full py-3 rounded-lg font-bold text-sm tracking-wider transition-colors border-2 bg-transparent",
                     tier.ctaClass
                   )}
                 >
