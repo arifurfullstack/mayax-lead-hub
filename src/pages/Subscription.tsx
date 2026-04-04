@@ -1,5 +1,6 @@
 import { Check, Crown, Zap, Shield, Star, Clock, BadgeCheck, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import subscriptionBg from "@/assets/subscription-bg.jpg";
 
 const tiers = [
   {
