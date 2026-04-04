@@ -9,6 +9,7 @@ import Pending from "./pages/Pending";
 import Rejected from "./pages/Rejected";
 import Suspended from "./pages/Suspended";
 import Dashboard from "./pages/Dashboard";
+import Subscription from "./pages/Subscription";
 import ProtectedRoute from "./components/ProtectedRoute";
 import NotFound from "./pages/NotFound";
 
