@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Wallet,
@@ -14,11 +14,26 @@ import {
   Zap,
   CreditCard,
   Store,
+  BarChart3,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import {
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 const tierConfig: Record<string, { color: string; icon: string; label: string }> = {
   basic: { color: "text-muted-foreground", icon: "🥉", label: "Basic" },
@@ -51,10 +66,27 @@ interface PurchaseRow {
   leads: { reference_code: string; quality_grade: string | null; city: string | null; province: string | null } | null;
 }
 
+const GRADE_COLORS: Record<string, string> = {
+  "A+": "#C8A84E",
+  A: "#3B82F6",
+  B: "#06B6D4",
+  C: "#64748B",
+};
+
+const CustomTooltipStyle = {
+  backgroundColor: "hsl(220, 43%, 20%)",
+  border: "1px solid hsl(215, 28%, 27%)",
+  borderRadius: "8px",
+  color: "hsl(210, 40%, 98%)",
+  fontSize: "12px",
+  padding: "8px 12px",
+};
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [dealer, setDealer] = useState<DealerData | null>(null);
   const [purchases, setPurchases] = useState<PurchaseRow[]>([]);
+  const [allPurchases, setAllPurchases] = useState<PurchaseRow[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -71,18 +103,58 @@ const Dashboard = () => {
       if (!d) return;
       setDealer(d);
 
-      const { data: p } = await supabase
+      // Fetch all purchases for charts
+      const { data: all } = await supabase
         .from("purchases")
         .select("id, price_paid, purchased_at, delivery_status, delivery_method, lead_id, leads(reference_code, quality_grade, city, province)")
         .eq("dealer_id", d.id)
-        .order("purchased_at", { ascending: false })
-        .limit(10);
+        .order("purchased_at", { ascending: false });
 
-      setPurchases((p as unknown as PurchaseRow[]) ?? []);
+      const allData = (all as unknown as PurchaseRow[]) ?? [];
+      setAllPurchases(allData);
+      setPurchases(allData.slice(0, 10));
       setLoading(false);
     };
     load();
   }, []);
+
+  // Chart data computations
+  const { spendingData, purchaseTrendData, gradeData } = useMemo(() => {
+    if (allPurchases.length === 0) {
+      return { spendingData: [], purchaseTrendData: [], gradeData: [] };
+    }
+
+    // Group by date for spending and purchase trends
+    const byDate = new Map<string, { spending: number; count: number }>();
+    allPurchases.forEach((p) => {
+      const date = new Date(p.purchased_at).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      const existing = byDate.get(date) || { spending: 0, count: 0 };
+      existing.spending += Number(p.price_paid);
+      existing.count += 1;
+      byDate.set(date, existing);
+    });
+
+    const spendingData = Array.from(byDate.entries())
+      .map(([date, { spending }]) => ({ date, spending: Math.round(spending * 100) / 100 }))
+      .reverse();
+
+    const purchaseTrendData = Array.from(byDate.entries())
+      .map(([date, { count }]) => ({ date, leads: count }))
+      .reverse();
+
+    // Grade distribution
+    const gradeCount = new Map<string, number>();
+    allPurchases.forEach((p) => {
+      const grade = p.leads?.quality_grade || "Unknown";
+      gradeCount.set(grade, (gradeCount.get(grade) || 0) + 1);
+    });
+
+    const gradeData = Array.from(gradeCount.entries())
+      .map(([name, value]) => ({ name, value, color: GRADE_COLORS[name] || "#64748B" }))
+      .sort((a, b) => b.value - a.value);
+
+    return { spendingData, purchaseTrendData, gradeData };
+  }, [allPurchases]);
 
   if (loading || !dealer) {
     return (
@@ -96,13 +168,13 @@ const Dashboard = () => {
   }
 
   const tier = tierConfig[dealer.subscription_tier] ?? tierConfig.basic;
-  const totalSpent = purchases.reduce((s, p) => s + Number(p.price_paid), 0);
+  const totalSpent = allPurchases.reduce((s, p) => s + Number(p.price_paid), 0);
   const deliveryStats = {
-    delivered: purchases.filter((p) => p.delivery_status === "delivered").length,
-    pending: purchases.filter((p) => p.delivery_status === "pending").length,
-    failed: purchases.filter((p) => p.delivery_status === "failed").length,
+    delivered: allPurchases.filter((p) => p.delivery_status === "delivered").length,
+    pending: allPurchases.filter((p) => p.delivery_status === "pending").length,
+    failed: allPurchases.filter((p) => p.delivery_status === "failed").length,
   };
-  const deliveryRate = purchases.length > 0 ? Math.round((deliveryStats.delivered / purchases.length) * 100) : 100;
+  const deliveryRate = allPurchases.length > 0 ? Math.round((deliveryStats.delivered / allPurchases.length) * 100) : 100;
   const recentFive = purchases.slice(0, 5);
 
   const gradeBadge: Record<string, string> = {
@@ -164,7 +236,7 @@ const Dashboard = () => {
               <ShoppingCart className="h-4 w-4 text-cyan" />
             </div>
           </div>
-          <p className="text-2xl font-bold text-foreground">{purchases.length}</p>
+          <p className="text-2xl font-bold text-foreground">{allPurchases.length}</p>
           <p className="text-xs text-muted-foreground">
             ${totalSpent.toFixed(2)} total invested
           </p>
@@ -188,6 +260,104 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Analytics Charts */}
+      {allPurchases.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Spending Over Time */}
+          <div className="lg:col-span-2 glass-card overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-primary" />
+                Spending Over Time
+              </h2>
+            </div>
+            <div className="p-4 h-[220px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={spendingData}>
+                  <defs>
+                    <linearGradient id="spendGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3} />
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 28%, 27%)" />
+                  <XAxis dataKey="date" tick={{ fill: "hsl(215, 20%, 65%)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "hsl(215, 20%, 65%)", fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `$${v}`} />
+                  <Tooltip contentStyle={CustomTooltipStyle} formatter={(value: number) => [`$${value.toFixed(2)}`, "Spent"]} />
+                  <Area type="monotone" dataKey="spending" stroke="#3B82F6" strokeWidth={2} fill="url(#spendGradient)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+
+          {/* Grade Distribution */}
+          <div className="glass-card overflow-hidden">
+            <div className="p-4 border-b border-border">
+              <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-gold" />
+                Lead Grade Distribution
+              </h2>
+            </div>
+            <div className="p-4 h-[220px] flex items-center justify-center">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={gradeData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={4}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {gradeData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={CustomTooltipStyle}
+                    formatter={(value: number, name: string) => [value, `Grade ${name}`]}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="px-4 pb-4 flex flex-wrap gap-3 justify-center">
+              {gradeData.map((g) => (
+                <div key={g.name} className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: g.color }} />
+                  <span>{g.name}</span>
+                  <span className="font-semibold text-foreground">{g.value}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Purchase Trend Bar Chart */}
+      {allPurchases.length > 0 && (
+        <div className="glass-card overflow-hidden">
+          <div className="p-4 border-b border-border">
+            <h2 className="text-sm font-semibold text-foreground flex items-center gap-2">
+              <ShoppingCart className="h-4 w-4 text-cyan" />
+              Lead Purchase Trend
+            </h2>
+          </div>
+          <div className="p-4 h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={purchaseTrendData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(215, 28%, 27%)" />
+                <XAxis dataKey="date" tick={{ fill: "hsl(215, 20%, 65%)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: "hsl(215, 20%, 65%)", fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                <Tooltip contentStyle={CustomTooltipStyle} formatter={(value: number) => [value, "Leads"]} />
+                <Bar dataKey="leads" fill="#06B6D4" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Recent Purchases */}
@@ -248,35 +418,19 @@ const Dashboard = () => {
           <div className="glass-card p-4 space-y-3">
             <h2 className="text-sm font-semibold text-foreground">Quick Actions</h2>
             <div className="space-y-2">
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-11 text-sm"
-                onClick={() => navigate("/marketplace")}
-              >
+              <Button variant="outline" className="w-full justify-start gap-3 h-11 text-sm" onClick={() => navigate("/marketplace")}>
                 <Store className="h-4 w-4 text-primary" />
                 Browse Marketplace
               </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-11 text-sm"
-                onClick={() => navigate("/wallet")}
-              >
+              <Button variant="outline" className="w-full justify-start gap-3 h-11 text-sm" onClick={() => navigate("/wallet")}>
                 <CreditCard className="h-4 w-4 text-cyan" />
                 Add Funds
               </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-11 text-sm"
-                onClick={() => navigate("/subscription")}
-              >
+              <Button variant="outline" className="w-full justify-start gap-3 h-11 text-sm" onClick={() => navigate("/subscription")}>
                 <Zap className="h-4 w-4 text-secondary" />
                 Upgrade Tier
               </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-3 h-11 text-sm"
-                onClick={() => navigate("/orders")}
-              >
+              <Button variant="outline" className="w-full justify-start gap-3 h-11 text-sm" onClick={() => navigate("/orders")}>
                 <Package className="h-4 w-4 text-gold" />
                 View Orders
               </Button>
