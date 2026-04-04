@@ -81,7 +81,7 @@ const tiers = [
 
 const Subscription = () => {
   return (
-    <div className="min-h-screen bg-background p-6 md:p-10">
+    <div className="p-6 md:p-10">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="text-center mb-12">
