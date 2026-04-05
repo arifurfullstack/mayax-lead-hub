@@ -20,12 +20,14 @@ import AppLayout from "./components/AppLayout";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import DynamicHead from "./components/DynamicHead";
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
+      <DynamicHead />
       <Toaster />
       <Sonner />
       <BrowserRouter>
