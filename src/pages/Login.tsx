@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import logo from "@/assets/mayax-logo.jpg";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import fallbackLogo from "@/assets/mayax-logo.jpg";
 
 const Login = () => {
   const navigate = useNavigate();
