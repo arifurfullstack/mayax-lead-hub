@@ -49,11 +49,20 @@ export function AppSidebar({ walletBalance = 0, onLogout }: AppSidebarProps) {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { data: settings } = usePlatformSettings();
+  const logoSrc = settings?.theme_logo_url || fallbackLogo;
+  const siteName = settings?.theme_website_name || "MayaX";
 
   const isActive = (path: string) => location.pathname === path;
 
   return (
     <Sidebar collapsible="icon" className="border-r border-border">
+      <SidebarHeader className="bg-sidebar p-3 border-b border-border">
+        <div className="flex items-center gap-2">
+          <img src={logoSrc} alt={siteName} className="w-8 h-8 rounded-md object-contain shrink-0" />
+          {!collapsed && <span className="text-sm font-bold text-foreground truncate">{siteName}</span>}
+        </div>
+      </SidebarHeader>
       <SidebarContent className="bg-sidebar">
         <SidebarGroup>
           <SidebarGroupLabel className="text-muted-foreground text-xs uppercase tracking-wider">
