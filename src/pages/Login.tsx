@@ -5,13 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
-import logo from "@/assets/mayax-logo.jpg";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import fallbackLogo from "@/assets/mayax-logo.jpg";
 
 const Login = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const { data: settings } = usePlatformSettings();
+  const logoSrc = settings?.theme_logo_url || fallbackLogo;
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,8 +89,8 @@ const Login = () => {
           {/* Logo */}
           <div className="mb-6">
             <img
-              src={logo}
-              alt="MayaX Lead Hub"
+              src={logoSrc}
+              alt={settings?.theme_website_name || "MayaX Lead Hub"}
               className="w-56 h-56 lg:w-72 lg:h-72 object-contain mx-auto drop-shadow-[0_0_40px_rgba(139,92,246,0.3)]"
             />
           </div>
