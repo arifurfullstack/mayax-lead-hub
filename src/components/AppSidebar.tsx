@@ -21,8 +21,11 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  SidebarHeader,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import fallbackLogo from "@/assets/mayax-logo.jpg";
 
 const mainItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
